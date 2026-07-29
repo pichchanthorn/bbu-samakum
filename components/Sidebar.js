@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import Logo from "./Logo";
 import { SearchIcon, HomeIcon, GridIcon, ShowcaseIcon, MembersIcon, InfoIcon } from "./icons";
 import { navItems } from "@/lib/mock-data";
 
@@ -16,6 +18,15 @@ const iconMap = {
 
 export default function Sidebar({ open, onNavigate }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function onSearchSubmit(e) {
+    e.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/showcase?q=${encodeURIComponent(q)}` : "/showcase");
+    onNavigate?.();
+  }
 
   return (
     <aside
@@ -28,24 +39,27 @@ export default function Sidebar({ open, onNavigate }) {
         onClick={onNavigate}
         className="flex items-center gap-2.5 px-2 pt-1.5 pb-5"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-brass bg-ink text-[15px] font-bold text-brass-light">
-          B
-        </div>
+        <Logo size={36} className="shrink-0" />
         <div>
           <div className="text-[16.5px] font-bold text-heading">BBU Samakum</div>
           <div className="font-mono-sans text-[10.5px] text-moss">IT DEPARTMENT</div>
         </div>
       </Link>
 
-      <div className="mb-[18px] flex items-center gap-2 rounded-[10px] border border-line px-3 py-2.5 text-faint">
+      <form
+        onSubmit={onSearchSubmit}
+        className="mb-[18px] flex items-center gap-2 rounded-[10px] border border-line px-3 py-2.5 text-faint focus-within:border-moss"
+      >
         <SearchIcon size={15} />
         <input
           type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Search posts..."
-          disabled
+          aria-label="Search posts"
           className="flex-1 bg-transparent text-[13px] text-charcoal outline-none placeholder:text-faint"
         />
-      </div>
+      </form>
 
       <nav className="flex flex-col gap-[3px]">
         {navItems.map((item) => {

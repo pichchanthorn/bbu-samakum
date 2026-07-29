@@ -1,4 +1,4 @@
-import { CodeIcon, RobotIcon, DisconnectGridIcon } from "./icons";
+import { CodeIcon, RobotIcon, DisconnectGridIcon, HeartIcon, MessageIcon, EyeIcon } from "./icons";
 
 const coverIcons = {
   "cover-a": CodeIcon,
@@ -38,10 +38,16 @@ export default function BigPostCard({ post }) {
       <div className="px-[18px] pt-1.5 text-[13.5px] text-muted">{post.excerpt}</div>
       <div className="mt-2.5 flex items-center justify-between border-t border-line px-[18px] pt-3.5 pb-4 text-[12.5px] text-faint">
         <div className="flex gap-4">
-          <span className="inline-flex items-center gap-1">♡ {post.likes}</span>
-          <span className="inline-flex items-center gap-1">💬 {post.comments}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <HeartIcon size={14} /> {post.likes}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <MessageIcon size={14} /> {post.comments}
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1">👁 {post.views}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <EyeIcon size={14} /> {post.views}
+        </span>
       </div>
     </div>
   );

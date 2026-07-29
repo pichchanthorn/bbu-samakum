@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Wrap from "@/components/Wrap";
 import IdCard from "@/components/IdCard";
-import BigPostCard from "@/components/BigPostCard";
+import HomeFeed from "@/components/HomeFeed";
+import Logo from "@/components/Logo";
 import {
   idCardMember,
   homeStats,
@@ -76,36 +77,11 @@ export default function HomePage() {
           </p>
         </div>
         <div className="grid grid-cols-[1fr_292px] items-start gap-8 max-[1080px]:grid-cols-1">
-          <div className="flex flex-col gap-[18px]">
-            <div className="mb-5 flex items-center gap-3 rounded-card border border-line bg-surface px-4 py-3.5">
-              <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-moss text-xs font-bold text-white">
-                SD
-              </div>
-              <input
-                type="text"
-                placeholder="Share something with the IT Department..."
-                disabled
-                className="flex-1 cursor-not-allowed rounded-full border border-line bg-paper px-4 py-2.5 text-[13.5px] text-faint outline-none"
-              />
-              <span className="inline-block cursor-not-allowed rounded-full border border-ink bg-ink px-[18px] py-2.5 text-center text-[13px] font-semibold text-white opacity-55">
-                Post
-              </span>
-            </div>
-
-            {feedPosts.map((post) => (
-              <BigPostCard key={post.id} post={post} />
-            ))}
-
-            <button className="w-full rounded-[10px] border border-line bg-surface py-3.5 text-[13.5px] text-charcoal transition-colors duration-200 hover:bg-paper-2">
-              Show more posts
-            </button>
-          </div>
+          <HomeFeed initialPosts={feedPosts} />
 
           <div className="sticky top-6 flex flex-col gap-4 rounded-card border border-line bg-surface p-[22px] max-[1080px]:static">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full border-2 border-brass bg-ink text-sm font-bold text-brass-light">
-                B
-              </div>
+              <Logo size={34} className="shrink-0" />
               <div className="text-[15px] font-bold text-heading">{infoPanel.name}</div>
             </div>
             <p className="text-[12.5px] text-muted">{infoPanel.tagline}</p>

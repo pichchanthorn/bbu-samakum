@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Sidebar from "./Sidebar";
+import Logo from "./Logo";
 
 export default function AppShell({ children }) {
   const [open, setOpen] = useState(false);
@@ -26,9 +27,7 @@ export default function AppShell({ children }) {
         <div className="min-w-0 flex-1">
           <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-line bg-paper/90 px-5 py-3.5 backdrop-blur-sm min-[881px]:hidden">
             <Link href="/" onClick={close} className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-brass bg-ink text-[15px] font-bold text-brass-light">
-                B
-              </div>
+              <Logo size={36} className="shrink-0" />
               <div className="text-[16.5px] font-bold text-heading">BBU Samakum</div>
             </Link>
             <button

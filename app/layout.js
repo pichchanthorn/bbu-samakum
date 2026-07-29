@@ -26,6 +26,7 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${kantumruyPro.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-body antialiased">

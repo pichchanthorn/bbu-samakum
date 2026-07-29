@@ -1,3 +1,5 @@
+import { HeartIcon, MessageIcon } from "./icons";
+
 export default function PostCard({ post }) {
   return (
     <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-[22px] transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_-14px_rgba(20,46,40,0.25)]">
@@ -23,8 +25,12 @@ export default function PostCard({ post }) {
         ))}
       </div>
       <div className="flex items-center justify-between border-t border-line pt-2.5 text-xs text-faint">
-        <span className="inline-flex items-center gap-1">♡ {post.likes}</span>
-        <span className="inline-flex items-center gap-1">💬 {post.comments}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <HeartIcon size={13} /> {post.likes}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <MessageIcon size={13} /> {post.comments}
+        </span>
         <span>{post.time}</span>
       </div>
     </div>

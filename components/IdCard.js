@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckIcon } from "./icons";
 
 export default function IdCard({ member }) {
   const [flipped, setFlipped] = useState(false);
@@ -44,8 +45,8 @@ export default function IdCard({ member }) {
             <span className="font-mono-sans text-[10px] tracking-[0.02em] text-brass-light">
               BBU SAMAKUM • MEMBER
             </span>
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border-[1.5px] border-brass-light text-[10px] text-brass-light">
-              ✓
+            <span className="flex h-6 w-6 items-center justify-center rounded-full border-[1.5px] border-brass-light text-brass-light">
+              <CheckIcon size={12} />
             </span>
           </div>
           <div className="my-3 flex items-center gap-3.5">

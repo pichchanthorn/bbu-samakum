@@ -152,3 +152,44 @@ export function NoSpamIcon(props) {
     </svg>
   );
 }
+
+export function HeartIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+    </svg>
+  );
+}
+
+export function MessageIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+export function EyeIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function CheckIcon(props) {
+  return (
+    <svg {...base({ strokeWidth: 2.4, ...props })}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon(props) {
+  return (
+    <svg {...base(props)}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
