@@ -1,26 +1,82 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #142E28;
+  --paper: #F3EEDF;
+  --paper-2: #EAE2CB;
+  --brass: #B98B2A;
+  --brass-light: #D9AE5C;
+  --moss: #3F6652;
+  --stamp: #9C3B3B;
+  --charcoal: #2B2B26;
+  --line: #D8CFB5;
+  --surface: #FBF9F2;
+  --muted: #6b6656;
+  --faint: #8a8570;
+  --radius: 14px;
+  --heading: #142E28;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --paper: #101E19;
+  --paper-2: #182922;
+  --surface: #182922;
+  --line: #2B3F37;
+  --charcoal: #E7E2D2;
+  --muted: #AABCB3;
+  --faint: #7E9186;
+  --heading: #F3EEDF;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-brass: var(--brass);
+  --color-brass-light: var(--brass-light);
+  --color-moss: var(--moss);
+  --color-stamp: var(--stamp);
+  --color-charcoal: var(--charcoal);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-heading: var(--heading);
+  --radius-card: var(--radius);
+  --font-body: var(--font-kantumruy-pro);
+  --font-mono-sans: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  transition: background-color .25s ease, color .25s ease;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--charcoal);
+  line-height: 1.6;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+    animation: none !important;
+  }
 }
