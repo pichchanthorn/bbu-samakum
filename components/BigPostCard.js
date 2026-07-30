@@ -27,10 +27,20 @@ export default function BigPostCard({ post }) {
         </div>
       </div>
       <div
-        className="mx-[18px] mt-3 flex h-[150px] items-center justify-center rounded-[10px] text-[rgba(251,249,244,0.9)]"
+        className="relative mx-[18px] mt-3 flex h-[150px] items-center justify-center overflow-hidden rounded-[10px]"
         style={{ background: coverBg[post.cover] }}
       >
-        <Icon size={46} />
+        <div
+          className="absolute inset-0 opacity-[0.14]"
+          style={{
+            backgroundImage:
+              "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
+            backgroundSize: "16px 16px",
+          }}
+        />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white/15 text-[rgba(251,249,244,0.95)] ring-1 ring-white/25 backdrop-blur-sm">
+          <Icon size={30} />
+        </div>
       </div>
       <div className="px-[18px] pt-3.5 text-[17px] font-bold text-heading">
         {post.title}
