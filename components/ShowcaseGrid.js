@@ -60,7 +60,7 @@ export default function ShowcaseGrid({ items, initialQuery = "" }) {
           No posts match {query ? `"${query}"` : "this filter"} yet.
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-5 max-[880px]:grid-cols-1">
+        <div className="grid grid-cols-2 gap-5 max-[880px]:grid-cols-1">
           {filtered.slice(0, visible).map((post) => (
             <PostCard key={post.id} post={post} />
           ))}

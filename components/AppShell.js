@@ -45,7 +45,7 @@ export default function AppShell({ children }) {
 
           <footer className="mt-5 border-t border-line px-8 py-10 pt-10 pb-15 max-[880px]:px-5">
             <div className="mx-auto flex max-w-[1080px] flex-wrap justify-between gap-2.5 font-mono-sans text-[11.5px] text-faint">
-              <span>© 2026 BBU Samakum — Prototype Preview</span>
+              <span>© 2026 BBU Samakum</span>
               <span>IT Department · BBU</span>
             </div>
           </footer>

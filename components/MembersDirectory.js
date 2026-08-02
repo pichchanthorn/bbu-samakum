@@ -83,7 +83,7 @@ export default function MembersDirectory({ members }) {
           No members match these filters.
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-4 max-[1080px]:grid-cols-3 max-[880px]:grid-cols-2 max-[560px]:grid-cols-1">
+        <div className="grid grid-cols-3 gap-4 max-[880px]:grid-cols-2 max-[560px]:grid-cols-1">
           {filtered.map((member) => (
             <MemberCard key={member.id} member={member} />
           ))}
