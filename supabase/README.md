@@ -12,24 +12,27 @@ backend. Follow these steps to get a project running locally.
    you.
 4. Wait a minute or two for the project to finish provisioning.
 
-## 2. Run the migration
+## 2. Run the migrations
 
-The schema lives in [`migrations/0001_init.sql`](./migrations/0001_init.sql)
-as plain SQL, so it's version-controlled instead of living only in the
-dashboard's visual table editor. The simplest way to run it, with no CLI
-install required:
+The schema lives in [`migrations/`](./migrations) as plain SQL, so it's
+version-controlled instead of living only in the dashboard's visual table
+editor. The simplest way to run it, with no CLI install required:
 
 1. In your Supabase project dashboard, open the **SQL Editor** (left
    sidebar).
 2. Click **New query**.
 3. Open `supabase/migrations/0001_init.sql` in this repo, copy its full
-   contents, and paste them into the SQL Editor.
-4. Click **Run**.
+   contents, paste them into the SQL Editor, and click **Run**.
+4. Repeat step 3 for `0002_domain_restriction.sql`, then
+   `0003_profile_on_signup.sql` — **run them in that numeric order**, since
+   each one builds on the last.
 
 You should see tables `profiles`, `posts`, `likes`, and `comments` appear
-under **Table Editor**, each with Row Level Security enabled.
+under **Table Editor**, each with Row Level Security enabled, plus two new
+functions (`hook_restrict_email_domain`, `handle_verified_user`) under
+**Database → Functions**.
 
-The migration is written to be safe to re-run (it uses
+Every migration is written to be safe to re-run (it uses
 `create table if not exists`, `drop policy if exists`, etc.), so if you make
 a mistake you can just paste and run it again.
 
@@ -63,7 +66,8 @@ recommended path.
 ## 3. Get your API keys
 
 1. In the dashboard, go to **Project Settings → API**.
-2. Copy the **Project URL** and the **`anon` public** key.
+2. Copy the **Project URL** and the **`publishable`** key (Supabase's
+   current name for the public client-side key, shown under **API Keys**).
 
 ## 4. Fill in `.env.local`
 
@@ -72,29 +76,107 @@ haven't already, and fill in the two values from the previous step:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 Restart `npm run dev` after editing this file so Next.js picks up the new
 environment variables.
 
+## 5. Phase 2: Auth configuration
+
+Real email OTP sign-in is now wired up (`components/SignInForm.js`), and
+sign-up is restricted server-side to `@pp.bbu.edu.kh` addresses via the
+`hook_restrict_email_domain` function in `0002_domain_restriction.sql`. That
+migration only creates the function — you still need to tell Supabase to
+actually call it, and to configure a few other Authentication settings.
+Everything below happens in the dashboard, under **Authentication** in the
+left sidebar.
+
+1. **Providers → Email**
+   - Open **Authentication → Providers**, click **Email**.
+   - Make sure **Email** is enabled.
+   - Under this project's email settings, confirm **"Confirm email"** is
+     on (it should be, by default) — this is what makes `verifyOtp` require
+     a real code instead of auto-confirming.
+   - If you don't want any other sign-in method available yet, disable
+     every other provider on this page (Phone, OAuth providers, etc.) —
+     this app only supports email OTP, per the current design.
+
+2. **Email OTP template (not magic link)**
+   - Open **Authentication → Emails → Email OTP** (the "Confirm signup" /
+     "Magic Link" templates are for the link-based flow, and are not what
+     this app uses — leave those alone).
+   - Confirm the **Email OTP** template is enabled and contains the
+     `{{ .Token }}` variable, so users receive the actual 6-digit code
+     `SignInForm.js` asks them to enter.
+
+3. **OTP expiry**
+   - Open **Authentication → Sign In / Providers → Email**, find **"OTP
+     Expiration"** (sometimes listed under rate limits / security
+     settings), and set it to something reasonable — **600 seconds (10
+     minutes)** matches what users are told implicitly by the UI.
+
+4. **Site URL & Redirect URLs (needed for local dev)**
+   - Open **Authentication → URL Configuration**.
+   - Set **Site URL** to `http://localhost:3000` for local development
+     (update this to your real domain once deployed).
+   - Add `http://localhost:3000/**` to **Redirect URLs** so Supabase
+     accepts requests originating from your local dev server. Add your
+     production URL here too once you deploy.
+
+5. **Enable the "Before User Created" Auth Hook — this is the actual
+   security boundary**
+   - Open **Authentication → Hooks**.
+   - Find **"Before User Created"** and enable it.
+   - Set its type to **Postgres Function** and select
+     `public.hook_restrict_email_domain` from the dropdown (this only
+     appears after you've run `0002_domain_restriction.sql` in step 2
+     above).
+   - Save. From this point on, any sign-up/OTP request for a non-BBU email
+     is rejected by Supabase itself — before a user row is ever created —
+     regardless of what the client sends.
+
+6. **Rate limits (optional, recommended)**
+   - Open **Authentication → Rate Limits** and confirm the default OTP
+     request limit is in place, so the sign-in form can't be used to spam
+     an inbox. The defaults are reasonable for a small community site; no
+     changes required unless you want to tighten them.
+
 ## What's here
 
 - `migrations/0001_init.sql` — the full schema: `profiles`, `posts`,
   `likes`, `comments`, and their Row Level Security policies.
+- `migrations/0002_domain_restriction.sql` — the `hook_restrict_email_domain`
+  Postgres function used by the "Before User Created" Auth Hook to reject
+  non-`@pp.bbu.edu.kh` sign-ups server-side.
+- `migrations/0003_profile_on_signup.sql` — auto-creates a `profiles` row
+  the moment a user completes OTP verification.
 - `seed.sql` — optional sample data mirrored from `lib/mock-data.js`.
 - `../lib/supabase/client.js` — Supabase client for use in Client
   Components.
 - `../lib/supabase/server.js` — Supabase client for use in Server
   Components / Route Handlers.
 
-## Manual steps before Phase 2
+## Manual steps checklist
 
-Phase 1 only sets up schema and client wiring — nothing in the app queries
-Supabase yet. Before Phase 2 (auth flow) can start, make sure you've done
-the manual steps above:
+**Phase 1 — schema & client setup:**
 
 - [ ] Created the Supabase project
 - [ ] Run `migrations/0001_init.sql`
 - [ ] (Optional) Run `seed.sql`
-- [ ] Filled in `.env.local` with your project URL and anon key
+- [ ] Filled in `.env.local` with your project URL and publishable key
+
+**Phase 2 — real auth, domain-restricted:**
+
+- [ ] Run `migrations/0002_domain_restriction.sql`
+- [ ] Run `migrations/0003_profile_on_signup.sql`
+- [ ] Authentication → Providers → Email is enabled, "Confirm email" is on,
+      other providers disabled
+- [ ] Authentication → Emails → Email OTP template is enabled (not just
+      Magic Link)
+- [ ] OTP expiration set to 10 minutes
+- [ ] Site URL set to `http://localhost:3000`, and
+      `http://localhost:3000/**` added to Redirect URLs
+- [ ] Authentication → Hooks → "Before User Created" is enabled and points
+      at `public.hook_restrict_email_domain`
+- [ ] Test sign-in with your own `@pp.bbu.edu.kh` address end to end

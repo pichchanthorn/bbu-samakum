@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MailIcon, CheckIcon } from "./icons";
+import { createClient } from "@/lib/supabase/client";
 
 const UNIVERSITY_DOMAIN = "@pp.bbu.edu.kh";
 const STEPS = [
@@ -16,25 +17,62 @@ export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
-  function handleEmailSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
     const value = email.trim().toLowerCase();
+
+    // This is just a fast-feedback UX check. It runs entirely in the
+    // browser and can be bypassed by anyone calling Supabase directly, so
+    // it is NOT the security boundary — that's the "Before User Created"
+    // Auth Hook enforced server-side (supabase/migrations/0002_domain_restriction.sql),
+    // which rejects the OTP request no matter how it's sent.
     if (!value.endsWith(UNIVERSITY_DOMAIN)) {
       setError(`Use a university email ending in ${UNIVERSITY_DOMAIN}`);
       return;
     }
+
     setError("");
+    setLoading(true);
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: value,
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
+
+    if (otpError) {
+      setError(otpError.message);
+      return;
+    }
+
+    setEmail(value);
     setStep(2);
   }
 
-  function handleOtpSubmit(e) {
+  async function handleOtpSubmit(e) {
     e.preventDefault();
-    if (!/^\d{6}$/.test(otp.trim())) {
+    const code = otp.trim();
+    if (!/^\d{6}$/.test(code)) {
       setError("Enter the 6-digit code we sent you.");
       return;
     }
+
     setError("");
+    setLoading(true);
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: "email",
+    });
+    setLoading(false);
+
+    if (verifyError) {
+      setError(verifyError.message);
+      return;
+    }
+
     setStep(3);
   }
 
@@ -79,9 +117,10 @@ export default function SignInForm() {
 
             <button
               type="submit"
-              className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss"
+              disabled={loading}
+              className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              Send verification code
+              {loading ? "Sending code..." : "Send verification code"}
             </button>
           </form>
 
@@ -125,9 +164,10 @@ export default function SignInForm() {
 
             <button
               type="submit"
-              className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss"
+              disabled={loading}
+              className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              Verify code
+              {loading ? "Verifying..." : "Verify code"}
             </button>
           </form>
 
