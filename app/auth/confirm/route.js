@@ -18,7 +18,9 @@ export async function GET(request) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/";
+  // Land back on the sign-in page's existing step-3 "verified" UI by
+  // default, rather than silently dropping the user on the home feed.
+  const next = searchParams.get("next") ?? "/sign-in?verified=1";
 
   const supabase = await createClient();
   let error = null;

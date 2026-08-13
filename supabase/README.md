@@ -112,10 +112,9 @@ left sidebar.
      app (see `emailRedirectTo` in `SignInForm.js`), and that route
      exchanges it for a session automatically — clicking the link alone is
      enough to sign in, no template changes needed.
-   - Whether the manual 6-digit code entry in step 2 of the sign-in form
-     still applies depends on whether your actual email also shows a plain
-     numeric code somewhere alongside the link — check your inbox to
-     confirm either way.
+   - Confirmed: the actual email contains only the link, no plain numeric
+     code. Step 2 of the sign-in form reflects that — it tells the user to
+     check their email and click the link, with no code field.
 
 3. **OTP expiry**
    - Open **Authentication → Sign In / Providers → Email**, find **"OTP
@@ -164,8 +163,9 @@ left sidebar.
 - `../lib/supabase/server.js` — Supabase client for use in Server
   Components / Route Handlers.
 - `../app/auth/confirm/route.js` — Route Handler that exchanges the code
-  from the emailed confirmation link for a real session, then redirects
-  home (or to `/sign-in?error=...` if the link is invalid/expired).
+  from the emailed confirmation link for a real session, then redirects to
+  `/sign-in?verified=1` (step 3's "verified" UI) on success, or
+  `/sign-in?error=...` if the link is invalid/expired.
 
 ## Manual steps checklist
 
