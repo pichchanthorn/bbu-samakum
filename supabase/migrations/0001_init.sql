@@ -111,6 +111,24 @@ create index if not exists comments_post_id_idx on public.comments (post_id);
 create index if not exists comments_author_id_idx on public.comments (author_id);
 
 -- ---------------------------------------------------------------------------
+-- Table-level grants
+-- ---------------------------------------------------------------------------
+-- RLS only filters *rows* a role is otherwise allowed to touch — it doesn't
+-- grant table access on its own. Supabase's own convention (and the reason
+-- it auto-provisions this for tables made through the dashboard UI) is to
+-- grant anon/authenticated broad table access and let RLS be the single
+-- source of truth for what's actually visible: a blocked read then comes
+-- back as a clean empty result, not an opaque permission error that's
+-- indistinguishable from a real bug — exactly the ambiguity that made this
+-- migration's missing grant hard to diagnose from a table created via the
+-- SQL Editor instead. Match that convention explicitly rather than relying
+-- on dashboard-managed default-privilege state this file can't see.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.profiles, public.posts, public.likes, public.comments
+  to authenticated;
+grant select on public.profiles, public.posts, public.likes, public.comments to anon;
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security
 -- ---------------------------------------------------------------------------
 alter table public.profiles enable row level security;
