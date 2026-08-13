@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { SearchIcon, HomeIcon, GridIcon, ShowcaseIcon, MembersIcon, InfoIcon } from "./icons";
 import { navItems } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
 
 const iconMap = {
   home: HomeIcon,
@@ -20,6 +21,27 @@ export default function Sidebar({ open, onNavigate }) {
   const pathname = usePathname();
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    onNavigate?.();
+  }
 
   function onSearchSubmit(e) {
     e.preventDefault();
@@ -85,13 +107,29 @@ export default function Sidebar({ open, onNavigate }) {
 
       <div className="mt-auto flex flex-col gap-3 border-t border-line pt-4">
         <ThemeToggle />
-        <Link
-          href="/sign-in"
-          onClick={onNavigate}
-          className="block w-full rounded-full border border-ink bg-ink px-5 py-2.5 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss"
-        >
-          Sign In
-        </Link>
+        {session ? (
+          <>
+            <div className="truncate rounded-[10px] bg-paper-2 px-3.5 py-2.5 text-[12px] text-muted">
+              Signed in as{" "}
+              <span className="font-semibold text-heading">{session.user.email}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="block w-full rounded-full border border-heading bg-transparent px-5 py-2.5 text-center text-sm font-semibold text-heading transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss hover:text-white"
+            >
+              Sign out
+            </button>
+          </>
+        ) : (
+          <Link
+            href="/sign-in"
+            onClick={onNavigate}
+            className="block w-full rounded-full border border-ink bg-ink px-5 py-2.5 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss"
+          >
+            Sign In
+          </Link>
+        )}
       </div>
     </aside>
   );
