@@ -50,6 +50,18 @@ export default async function MembersPage() {
       .order("created_at", { ascending: true }),
   ]);
 
+  if (error) {
+    // Supabase never throws on a query error, it returns { error } — log
+    // it explicitly or it's invisible in the terminal. Search for
+    // "[members]" in `npm run dev` output to find this.
+    console.error("[members] profiles query failed:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+  }
+
   const members = (profiles ?? []).map(toDisplayMember);
 
   return (
