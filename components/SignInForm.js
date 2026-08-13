@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MailIcon, CheckIcon } from "./icons";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,25 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
+  // If the user clicked the emailed confirmation link instead of typing a
+  // code, app/auth/confirm/route.js already exchanged it for a session and
+  // redirected here — this only runs when that exchange failed, to surface
+  // the reason via the same error UI used for the manual-entry path.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linkError = params.get("error");
+    if (linkError) {
+      // One-time sync from the URL (an external system) on mount, not
+      // state derived from props/other state — the case this rule doesn't
+      // cover.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setError(linkError);
+      params.delete("error");
+      const query = params.toString();
+      window.history.replaceState({}, "", query ? `?${query}` : window.location.pathname);
+    }
+  }, []);
+
   async function handleEmailSubmit(e) {
     e.preventDefault();
     const value = email.trim().toLowerCase();
@@ -38,7 +57,14 @@ export default function SignInForm() {
     setLoading(true);
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: value,
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        // Without this, GoTrue's hosted verify page falls back to
+        // redirecting to the dashboard's Site URL (the site root), which
+        // has nothing to exchange the code for a session —
+        // app/auth/confirm/route.js is what actually does that.
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
     });
     setLoading(false);
 

@@ -102,13 +102,20 @@ left sidebar.
      every other provider on this page (Phone, OAuth providers, etc.) —
      this app only supports email OTP, per the current design.
 
-2. **Email OTP template (not magic link)**
-   - Open **Authentication → Emails → Email OTP** (the "Confirm signup" /
-     "Magic Link" templates are for the link-based flow, and are not what
-     this app uses — leave those alone).
-   - Confirm the **Email OTP** template is enabled and contains the
-     `{{ .Token }}` variable, so users receive the actual 6-digit code
-     `SignInForm.js` asks them to enter.
+2. **Email template — free tier can't customize this, and that's fine**
+   - Supabase's built-in email sender (no custom SMTP configured) locks the
+     **Source** tab on **Authentication → Emails**, so the template can't be
+     switched to print a bare `{{ .Token }}` code — it only sends
+     `{{ .ConfirmationURL }}`, a clickable link.
+   - That's handled: the link points at Supabase's own hosted verify
+     endpoint, which redirects back to `app/auth/confirm/route.js` in this
+     app (see `emailRedirectTo` in `SignInForm.js`), and that route
+     exchanges it for a session automatically — clicking the link alone is
+     enough to sign in, no template changes needed.
+   - Whether the manual 6-digit code entry in step 2 of the sign-in form
+     still applies depends on whether your actual email also shows a plain
+     numeric code somewhere alongside the link — check your inbox to
+     confirm either way.
 
 3. **OTP expiry**
    - Open **Authentication → Sign In / Providers → Email**, find **"OTP
@@ -156,6 +163,9 @@ left sidebar.
   Components.
 - `../lib/supabase/server.js` — Supabase client for use in Server
   Components / Route Handlers.
+- `../app/auth/confirm/route.js` — Route Handler that exchanges the code
+  from the emailed confirmation link for a real session, then redirects
+  home (or to `/sign-in?error=...` if the link is invalid/expired).
 
 ## Manual steps checklist
 
@@ -172,8 +182,6 @@ left sidebar.
 - [ ] Run `migrations/0003_profile_on_signup.sql`
 - [ ] Authentication → Providers → Email is enabled, "Confirm email" is on,
       other providers disabled
-- [ ] Authentication → Emails → Email OTP template is enabled (not just
-      Magic Link)
 - [ ] OTP expiration set to 10 minutes
 - [ ] Site URL set to `http://localhost:3000`, and
       `http://localhost:3000/**` added to Redirect URLs
