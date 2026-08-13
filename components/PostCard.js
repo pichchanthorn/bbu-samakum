@@ -1,6 +1,7 @@
-import { HeartIcon, MessageIcon } from "./icons";
+import { MessageIcon } from "./icons";
+import LikeButton from "./LikeButton";
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, userId }) {
   return (
     <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-[22px] transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_-14px_rgba(20,46,40,0.25)]">
       <div className="flex items-center gap-2.5">
@@ -25,9 +26,13 @@ export default function PostCard({ post }) {
         ))}
       </div>
       <div className="flex items-center justify-between border-t border-line pt-2.5 text-xs text-faint">
-        <span className="inline-flex items-center gap-1.5">
-          <HeartIcon size={13} /> {post.likes}
-        </span>
+        <LikeButton
+          postId={post.id}
+          initialLiked={post.liked}
+          initialCount={post.likes}
+          userId={userId}
+          size={13}
+        />
         <span className="inline-flex items-center gap-1.5">
           <MessageIcon size={13} /> {post.comments}
         </span>
