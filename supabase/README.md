@@ -102,13 +102,19 @@ left sidebar.
      every other provider on this page (Phone, OAuth providers, etc.) —
      this app only supports email OTP, per the current design.
 
-2. **Email OTP template (not magic link)**
-   - Open **Authentication → Emails → Email OTP** (the "Confirm signup" /
-     "Magic Link" templates are for the link-based flow, and are not what
-     this app uses — leave those alone).
-   - Confirm the **Email OTP** template is enabled and contains the
-     `{{ .Token }}` variable, so users receive the actual 6-digit code
-     `SignInForm.js` asks them to enter.
+2. **Email template — free tier can't customize this, and that's fine**
+   - Supabase's built-in email sender (no custom SMTP configured) locks the
+     **Source** tab on **Authentication → Emails**, so the template can't be
+     switched to print a bare `{{ .Token }}` code — it only sends
+     `{{ .ConfirmationURL }}`, a clickable link.
+   - That's handled: the link points at Supabase's own hosted verify
+     endpoint, which redirects back to `app/auth/confirm/route.js` in this
+     app (see `emailRedirectTo` in `SignInForm.js`), and that route
+     exchanges it for a session automatically — clicking the link alone is
+     enough to sign in, no template changes needed.
+   - Confirmed: the actual email contains only the link, no plain numeric
+     code. Step 2 of the sign-in form reflects that — it tells the user to
+     check their email and click the link, with no code field.
 
 3. **OTP expiry**
    - Open **Authentication → Sign In / Providers → Email**, find **"OTP
@@ -142,6 +148,32 @@ left sidebar.
      an inbox. The defaults are reasonable for a small community site; no
      changes required unless you want to tighten them.
 
+### Troubleshooting: clicking the link redirects with `error=server_error&error_code=unexpected_failure`
+
+This means something inside Supabase (a trigger or hook function on
+`auth.users`) threw an error while confirming the user — GoTrue can't say
+more than that from the client side. Check **Logs → Postgres Logs** in the
+dashboard (filtered to when you clicked the link) for the actual Postgres
+error message; **Logs → Auth Logs** shows the matching `unexpected_failure`
+event to help you find the right timestamp.
+
+The most common cause: `0003_profile_on_signup.sql` wasn't (fully) applied
+yet, so `profiles.name` is still `not null` from `0001_init.sql`, and the
+profile-auto-creation trigger's insert fails. Confirm with:
+
+```sql
+select column_name, is_nullable
+from information_schema.columns
+where table_schema = 'public' and table_name = 'profiles' and column_name = 'name';
+```
+
+If `is_nullable` is `NO`, re-paste and re-run `0003_profile_on_signup.sql`
+(and `0001_init.sql`, which now guards `derive_profile_initials()` against
+a null name) — both are safe to re-run. The trigger also now catches and
+logs any error during profile creation instead of letting it block sign-in
+entirely, so this specific failure mode shouldn't be able to recur even if
+something else goes wrong with that insert in the future.
+
 ## What's here
 
 - `migrations/0001_init.sql` — the full schema: `profiles`, `posts`,
@@ -156,6 +188,10 @@ left sidebar.
   Components.
 - `../lib/supabase/server.js` — Supabase client for use in Server
   Components / Route Handlers.
+- `../app/auth/confirm/route.js` — Route Handler that exchanges the code
+  from the emailed confirmation link for a real session, then redirects to
+  `/sign-in?verified=1` (step 3's "verified" UI) on success, or
+  `/sign-in?error=...` if the link is invalid/expired.
 
 ## Manual steps checklist
 
@@ -172,8 +208,6 @@ left sidebar.
 - [ ] Run `migrations/0003_profile_on_signup.sql`
 - [ ] Authentication → Providers → Email is enabled, "Confirm email" is on,
       other providers disabled
-- [ ] Authentication → Emails → Email OTP template is enabled (not just
-      Magic Link)
 - [ ] OTP expiration set to 10 minutes
 - [ ] Site URL set to `http://localhost:3000`, and
       `http://localhost:3000/**` added to Redirect URLs

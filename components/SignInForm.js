@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MailIcon, CheckIcon } from "./icons";
 import { createClient } from "@/lib/supabase/client";
@@ -8,17 +8,70 @@ import { createClient } from "@/lib/supabase/client";
 const UNIVERSITY_DOMAIN = "@pp.bbu.edu.kh";
 const STEPS = [
   { key: 1, label: "Email" },
-  { key: 2, label: "OTP" },
+  { key: 2, label: "Confirm" },
   { key: 3, label: "Verified" },
 ];
 
 export default function SignInForm() {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+
+  // Supabase's free-tier email template only ever contains a clickable
+  // confirmation link (no typeable code), so verification finishes when the
+  // user clicks that link, lands on app/auth/confirm/route.js, and gets
+  // redirected back here — either to ?verified=1 on success, or ?error=...
+  // if the exchange failed (expired/reused link, or the link was opened in
+  // a different browser than the one that requested it). This effect
+  // syncs that one-time redirect outcome into local state.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const linkError = params.get("error");
+    const verified = params.get("verified");
+
+    async function syncFromRedirect() {
+      if (verified) {
+        const { data } = await supabase.auth.getUser();
+        setEmail(data.user?.email ?? "");
+        setStep(3);
+      } else if (linkError) {
+        setError(linkError);
+      }
+    }
+
+    if (linkError || verified) {
+      syncFromRedirect();
+      params.delete("error");
+      params.delete("verified");
+      const query = params.toString();
+      window.history.replaceState({}, "", query ? `?${query}` : window.location.pathname);
+    }
+  }, [supabase]);
+
+  async function sendConfirmationLink(value) {
+    setError("");
+    setLoading(true);
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: value,
+      options: {
+        shouldCreateUser: true,
+        // Without this, GoTrue's hosted verify page falls back to
+        // redirecting to the dashboard's Site URL (the site root), which
+        // has nothing to exchange the code for a session —
+        // app/auth/confirm/route.js is what actually does that.
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+      },
+    });
+    setLoading(false);
+
+    if (otpError) {
+      setError(otpError.message);
+      return false;
+    }
+    return true;
+  }
 
   async function handleEmailSubmit(e) {
     e.preventDefault();
@@ -34,51 +87,19 @@ export default function SignInForm() {
       return;
     }
 
-    setError("");
-    setLoading(true);
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: value,
-      options: { shouldCreateUser: true },
-    });
-    setLoading(false);
-
-    if (otpError) {
-      setError(otpError.message);
-      return;
-    }
+    const sent = await sendConfirmationLink(value);
+    if (!sent) return;
 
     setEmail(value);
     setStep(2);
   }
 
-  async function handleOtpSubmit(e) {
-    e.preventDefault();
-    const code = otp.trim();
-    if (!/^\d{6}$/.test(code)) {
-      setError("Enter the 6-digit code we sent you.");
-      return;
-    }
-
-    setError("");
-    setLoading(true);
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email",
-    });
-    setLoading(false);
-
-    if (verifyError) {
-      setError(verifyError.message);
-      return;
-    }
-
-    setStep(3);
+  function handleResend() {
+    sendConfirmationLink(email);
   }
 
   function changeEmail() {
     setStep(1);
-    setOtp("");
     setError("");
   }
 
@@ -120,7 +141,7 @@ export default function SignInForm() {
               disabled={loading}
               className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
-              {loading ? "Sending code..." : "Send verification code"}
+              {loading ? "Sending link..." : "Send confirmation link"}
             </button>
           </form>
 
@@ -138,38 +159,30 @@ export default function SignInForm() {
       )}
 
       {step === 2 && (
-        <>
-          <h2 className="mb-1.5 text-[21px] text-heading">Enter your code</h2>
+        <div className="flex flex-col items-center py-4 text-center">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border-2 border-brass bg-[#F5E9D3] text-brass">
+            <MailIcon size={24} />
+          </span>
+          <h2 className="mb-1.5 text-[21px] text-heading">Check your email</h2>
+          <p className="mb-1 text-[13px] text-muted">
+            We sent a confirmation link to{" "}
+            <span className="font-semibold text-heading">{email}</span>.
+          </p>
           <p className="mb-[22px] text-[13px] text-muted">
-            We sent a 6-digit code to <span className="font-semibold text-heading">{email}</span>.
+            Open it on this device, in this same browser, to finish signing
+            in — you&apos;ll land back here signed in automatically.
           </p>
 
-          <form onSubmit={handleOtpSubmit}>
-            <div className="mb-4">
-              <label htmlFor="otp" className="mb-1.5 block text-xs font-semibold text-heading">
-                Verification code
-              </label>
-              <input
-                id="otp"
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^\d]/g, ""))}
-                placeholder="000000"
-                className="w-full rounded-[10px] border border-line px-3.5 py-2.5 text-center font-mono-sans text-lg tracking-[0.4em] text-charcoal outline-none placeholder:text-faint focus:border-moss"
-              />
-              {error && <p className="mt-1.5 text-[11.5px] text-stamp">{error}</p>}
-            </div>
+          {error && <p className="mb-4 text-[11.5px] text-stamp">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
-            >
-              {loading ? "Verifying..." : "Verify code"}
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={loading}
+            className="mt-0.5 w-full rounded-full border border-ink bg-ink py-3 text-center text-sm font-semibold text-white transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          >
+            {loading ? "Resending..." : "Resend the email"}
+          </button>
 
           <button
             type="button"
@@ -178,7 +191,7 @@ export default function SignInForm() {
           >
             Use a different email
           </button>
-        </>
+        </div>
       )}
 
       {step === 3 && (
