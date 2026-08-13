@@ -148,6 +148,32 @@ left sidebar.
      an inbox. The defaults are reasonable for a small community site; no
      changes required unless you want to tighten them.
 
+### Troubleshooting: clicking the link redirects with `error=server_error&error_code=unexpected_failure`
+
+This means something inside Supabase (a trigger or hook function on
+`auth.users`) threw an error while confirming the user — GoTrue can't say
+more than that from the client side. Check **Logs → Postgres Logs** in the
+dashboard (filtered to when you clicked the link) for the actual Postgres
+error message; **Logs → Auth Logs** shows the matching `unexpected_failure`
+event to help you find the right timestamp.
+
+The most common cause: `0003_profile_on_signup.sql` wasn't (fully) applied
+yet, so `profiles.name` is still `not null` from `0001_init.sql`, and the
+profile-auto-creation trigger's insert fails. Confirm with:
+
+```sql
+select column_name, is_nullable
+from information_schema.columns
+where table_schema = 'public' and table_name = 'profiles' and column_name = 'name';
+```
+
+If `is_nullable` is `NO`, re-paste and re-run `0003_profile_on_signup.sql`
+(and `0001_init.sql`, which now guards `derive_profile_initials()` against
+a null name) — both are safe to re-run. The trigger also now catches and
+logs any error during profile creation instead of letting it block sign-in
+entirely, so this specific failure mode shouldn't be able to recur even if
+something else goes wrong with that insert in the future.
+
 ## What's here
 
 - `migrations/0001_init.sql` — the full schema: `profiles`, `posts`,

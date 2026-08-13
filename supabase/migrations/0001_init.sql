@@ -27,6 +27,14 @@ returns trigger
 language plpgsql
 as $$
 begin
+  -- Every profile auto-created by handle_verified_user() (see
+  -- 0003_profile_on_signup.sql) starts with name = null, since there's no
+  -- profile-editing UI yet to have collected one. Leave initials null too
+  -- in that case, rather than coercing it to an empty string.
+  if new.name is null then
+    return new;
+  end if;
+
   if new.initials is null or length(trim(new.initials)) = 0 then
     new.initials := upper(
       coalesce(substring(new.name from '^\S+' for 1), '') ||

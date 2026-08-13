@@ -32,9 +32,20 @@ begin
   -- is ever entered.
   if new.email_confirmed_at is not null
      and (tg_op = 'INSERT' or old.email_confirmed_at is null) then
-    insert into public.profiles (id)
-    values (new.id)
-    on conflict (id) do nothing;
+    begin
+      insert into public.profiles (id)
+      values (new.id)
+      on conflict (id) do nothing;
+    exception when others then
+      -- Creating the directory row is a nice-to-have, not a security
+      -- boundary (unlike hook_restrict_email_domain, which should fail
+      -- closed). A bug here — a bad column default, a constraint we
+      -- forgot to relax, anything — must never turn into GoTrue's opaque
+      -- "unexpected_failure" and block a real, already-domain-verified
+      -- user from getting a session. Swallow and log instead; the missing
+      -- profile row is easy to backfill later, a broken login isn't.
+      raise warning 'handle_verified_user: could not create profile for %: %', new.id, sqlerrm;
+    end;
   end if;
 
   return new;
