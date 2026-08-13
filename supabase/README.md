@@ -63,7 +63,8 @@ recommended path.
 ## 3. Get your API keys
 
 1. In the dashboard, go to **Project Settings → API**.
-2. Copy the **Project URL** and the **`anon` public** key.
+2. Copy the **Project URL** and the **`publishable`** key (Supabase's
+   current name for the public client-side key, shown under **API Keys**).
 
 ## 4. Fill in `.env.local`
 
@@ -72,7 +73,7 @@ haven't already, and fill in the two values from the previous step:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
 Restart `npm run dev` after editing this file so Next.js picks up the new
