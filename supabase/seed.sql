@@ -48,7 +48,20 @@ values
   ('66666666-6666-6666-6666-666666666666', 'Sokha Ly', 'SL', 'Department of Information Technology', 'Gen 26 · Year 2', 'BBU-2024-00152', 'student', now() - interval '20 days'),
   ('77777777-7777-7777-7777-777777777777', 'Bunthoeun Prak', 'BP', 'Department of Information Technology', 'Gen 23 · Year 4', 'BBU-2024-00153', 'student', now() - interval '55 days'),
   ('88888888-8888-8888-8888-888888888888', 'Chenda Mao', 'CM', 'Department of Information Technology', 'Gen 27 · Year 1', 'BBU-2024-00154', 'student', now() - interval '10 days')
-on conflict (id) do nothing;
+-- `on conflict do nothing` would lose this data: the auth.users insert
+-- above sets email_confirmed_at directly, which fires
+-- handle_verified_user() (0003_profile_on_signup.sql) immediately and
+-- creates an empty (name/department/etc. all null) profiles row for each
+-- id *before* this statement runs. `do update` makes the real seed values
+-- win over that placeholder instead of silently losing to it.
+on conflict (id) do update set
+  name = excluded.name,
+  initials = excluded.initials,
+  department = excluded.department,
+  batch = excluded.batch,
+  id_number = excluded.id_number,
+  role = excluded.role,
+  verified_at = excluded.verified_at;
 
 -- ---------------------------------------------------------------------------
 -- posts — type = 'feed' (from lib/mock-data.js `feedPosts`)
