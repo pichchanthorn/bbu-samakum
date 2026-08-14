@@ -7,7 +7,7 @@ import { idCardMember } from "@/lib/mock-data";
 const PAGE_SIZE = 3;
 const COVERS = ["cover-a", "cover-b", "cover-c"];
 
-export default function HomeFeed({ initialPosts }) {
+export default function HomeFeed({ initialPosts, userId }) {
   const [posts, setPosts] = useState(initialPosts);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [draft, setDraft] = useState("");
@@ -67,7 +67,7 @@ export default function HomeFeed({ initialPosts }) {
       </div>
 
       {posts.slice(0, visible).map((post) => (
-        <BigPostCard key={post.id} post={post} />
+        <BigPostCard key={post.id} post={post} userId={userId} />
       ))}
 
       {visible < posts.length && (

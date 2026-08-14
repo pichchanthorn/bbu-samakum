@@ -6,7 +6,7 @@ import { showcaseFilters } from "@/lib/mock-data";
 
 const PAGE_SIZE = 6;
 
-export default function ShowcaseGrid({ items, initialQuery = "" }) {
+export default function ShowcaseGrid({ items, initialQuery = "", userId }) {
   const query = initialQuery.trim().toLowerCase();
 
   const [active, setActive] = useState(showcaseFilters[0]);
@@ -62,7 +62,7 @@ export default function ShowcaseGrid({ items, initialQuery = "" }) {
       ) : (
         <div className="grid grid-cols-2 gap-5 max-[880px]:grid-cols-1">
           {filtered.slice(0, visible).map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} userId={userId} />
           ))}
         </div>
       )}

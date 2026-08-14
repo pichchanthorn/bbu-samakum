@@ -3,9 +3,20 @@ import Wrap from "@/components/Wrap";
 import IdCard from "@/components/IdCard";
 import HomeFeed from "@/components/HomeFeed";
 import InfoPanel from "@/components/InfoPanel";
-import { idCardMember, homeStats, feedPosts, joinSteps } from "@/lib/mock-data";
+import { idCardMember, homeStats, joinSteps } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import { getPostsWithEngagement } from "@/lib/posts";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const currentUserId = userData?.user?.id ?? null;
+
+  const { posts, error } = await getPostsWithEngagement({
+    type: "feed",
+    currentUserId,
+  });
+
   return (
     <>
       {/* Hero */}
@@ -71,7 +82,22 @@ export default function HomePage() {
           </p>
         </div>
         <div className="grid grid-cols-[1fr_292px] items-start gap-8 max-[1080px]:grid-cols-1">
-          <HomeFeed initialPosts={feedPosts} />
+          {error ? (
+            <div className="rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center text-sm text-muted">
+              Couldn&apos;t load the community feed right now. Please try
+              again in a moment.
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center text-sm text-muted">
+              {currentUserId ? (
+                "No posts yet — be the first to share something."
+              ) : (
+                "Sign in with your university email to see the community feed."
+              )}
+            </div>
+          ) : (
+            <HomeFeed initialPosts={posts} userId={currentUserId} />
+          )}
 
           <InfoPanel />
         </div>

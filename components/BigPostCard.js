@@ -1,4 +1,5 @@
-import { CodeIcon, RobotIcon, DisconnectGridIcon, HeartIcon, MessageIcon, EyeIcon } from "./icons";
+import { CodeIcon, RobotIcon, DisconnectGridIcon, MessageIcon, EyeIcon } from "./icons";
+import LikeButton from "./LikeButton";
 
 const coverIcons = {
   "cover-a": CodeIcon,
@@ -12,7 +13,7 @@ const coverBg = {
   "cover-c": "linear-gradient(135deg, var(--brass), var(--ink))",
 };
 
-export default function BigPostCard({ post }) {
+export default function BigPostCard({ post, userId }) {
   const Icon = coverIcons[post.cover];
 
   return (
@@ -38,9 +39,13 @@ export default function BigPostCard({ post }) {
       <div className="px-[18px] pt-1.5 text-[13.5px] text-muted">{post.excerpt}</div>
       <div className="mt-2.5 flex items-center justify-between border-t border-line px-[18px] pt-3.5 pb-4 text-[12.5px] text-faint">
         <div className="flex gap-4">
-          <span className="inline-flex items-center gap-1.5">
-            <HeartIcon size={14} /> {post.likes}
-          </span>
+          <LikeButton
+            postId={post.id}
+            initialLiked={post.liked}
+            initialCount={post.likes}
+            userId={userId}
+            size={14}
+          />
           <span className="inline-flex items-center gap-1.5">
             <MessageIcon size={14} /> {post.comments}
           </span>
