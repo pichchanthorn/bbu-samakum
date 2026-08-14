@@ -8,22 +8,24 @@ export default function InfoPanel({
   ctaHref = "/sign-in",
 }) {
   return (
-    <div className="sticky top-6 flex flex-col gap-4 rounded-card border border-line bg-surface p-[22px] max-[1080px]:static">
+    <div className="sticky top-6 flex flex-col gap-4 rounded-card border border-line bg-surface p-5 max-[1080px]:static">
       <div className="flex items-center gap-2.5">
         <Logo size={34} className="shrink-0" />
-        <div className="text-[15px] font-bold text-heading">{infoPanel.name}</div>
+        <div className="text-[15px] font-bold tracking-[-0.005em] text-heading">{infoPanel.name}</div>
       </div>
-      <p className="text-[12.5px] text-muted">{infoPanel.tagline}</p>
-      <div className="grid grid-cols-2 gap-3">
+      <p className="text-[12.5px] leading-relaxed text-muted">{infoPanel.tagline}</p>
+      <div className="grid grid-cols-2 gap-2.5">
         {infoPanel.stats.map((s) => (
           <div key={s.label} className="rounded-[10px] bg-paper-2 px-3 py-2.5">
-            <div className="font-mono-sans text-base font-bold text-heading">{s.num}</div>
-            <div className="mt-0.5 text-[10.5px] text-moss">{s.label}</div>
+            <div className="font-mono-sans text-[17px] font-bold tracking-[-0.01em] text-heading">{s.num}</div>
+            <div className="mt-0.5 font-mono-sans text-[9.5px] font-semibold tracking-[0.07em] text-moss uppercase">
+              {s.label}
+            </div>
           </div>
         ))}
       </div>
       {note && (
-        <div className="rounded-[10px] border border-dashed border-line bg-paper px-3 py-2.5 text-[11.5px] text-muted">
+        <div className="rounded-[10px] border border-dashed border-line bg-paper px-3 py-2.5 text-[11.5px] leading-relaxed text-muted">
           {note}
         </div>
       )}

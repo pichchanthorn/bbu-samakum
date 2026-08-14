@@ -3,9 +3,28 @@ import Wrap from "@/components/Wrap";
 import IdCard from "@/components/IdCard";
 import HomeFeed from "@/components/HomeFeed";
 import InfoPanel from "@/components/InfoPanel";
-import { idCardMember, homeStats, feedPosts, joinSteps } from "@/lib/mock-data";
+import { idCardMember, homeStats, joinSteps } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import { getPostsWithEngagement } from "@/lib/posts";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const currentUserId = userData?.user?.id ?? null;
+
+  // Same columns lib/posts.js fetches for every other post's author, so a
+  // just-created card can be formatted with the exact same helpers
+  // (displayName/displayInitials/authorMetaParts) instead of a second
+  // fallback style.
+  const [{ posts, error }, profileResult] = await Promise.all([
+    getPostsWithEngagement({ type: "feed", currentUserId }),
+    currentUserId
+      ? supabase.from("profiles").select("name, initials, role, batch").eq("id", currentUserId).single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const currentUserProfile = currentUserId ? profileResult.data ?? {} : null;
+
   return (
     <>
       {/* Hero */}
@@ -15,7 +34,7 @@ export default function HomePage() {
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-paper-2 px-3.5 py-1.5 text-[12.5px] text-moss before:content-['●'] before:text-[9px] before:text-stamp">
               IT Department • verified members only
             </div>
-            <h1 className="mb-4 text-[42px] leading-[1.15] font-bold tracking-[-0.01em] text-heading max-[880px]:text-[32px]">
+            <h1 className="mb-4 text-[46px] leading-[1.08] font-bold tracking-[-0.02em] text-heading max-[880px]:text-[32px]">
               A community built for BBU&apos;s <span className="text-brass">IT Department</span>
             </h1>
             <p className="mb-[26px] max-w-[460px] text-base text-muted">
@@ -52,10 +71,16 @@ export default function HomePage() {
                 i < homeStats.length - 1 ? "border-r border-line max-[880px]:border-r-0" : ""
               }`}
             >
-              <div className="font-mono-sans text-[26px] font-bold text-heading">
+              <div
+                className={`font-mono-sans font-bold tracking-[-0.01em] text-heading ${
+                  i === 0 ? "text-[32px]" : "text-[22px]"
+                }`}
+              >
                 {stat.num}
               </div>
-              <div className="mt-1 text-xs text-moss">{stat.label}</div>
+              <div className="mt-1 font-mono-sans text-[10px] font-semibold tracking-[0.06em] text-moss uppercase">
+                {stat.label}
+              </div>
             </div>
           ))}
         </Wrap>
@@ -64,14 +89,29 @@ export default function HomePage() {
       {/* Community feed */}
       <Wrap className="py-14">
         <div className="mb-[22px]">
-          <h2 className="text-[22px] font-bold text-heading">Community feed</h2>
+          <h2 className="text-[23px] font-bold tracking-[-0.01em] text-heading">Community feed</h2>
           <p className="mt-[5px] text-[13.5px] text-muted">
             Posts from verified IT Department members appear here as soon as
             they&apos;re published.
           </p>
         </div>
         <div className="grid grid-cols-[1fr_292px] items-start gap-8 max-[1080px]:grid-cols-1">
-          <HomeFeed initialPosts={feedPosts} />
+          {error ? (
+            <div className="rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center text-sm text-muted">
+              Couldn&apos;t load the community feed right now. Please try
+              again in a moment.
+            </div>
+          ) : !currentUserId ? (
+            <div className="rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center text-sm text-muted">
+              Sign in with your university email to see the community feed.
+            </div>
+          ) : (
+            <HomeFeed
+              initialPosts={posts}
+              userId={currentUserId}
+              authorProfile={currentUserProfile}
+            />
+          )}
 
           <InfoPanel />
         </div>
@@ -82,7 +122,7 @@ export default function HomePage() {
         <div className="rounded-card bg-ink text-white">
           <Wrap className="py-14">
             <div className="mb-[22px]">
-              <h2 className="text-[22px] font-bold text-white">Join in 3 steps</h2>
+              <h2 className="text-[23px] font-bold tracking-[-0.01em] text-white">Join in 3 steps</h2>
               <p className="mt-[5px] text-[13.5px] text-[#B9C9C1]">
                 A short verification flow — no need to upload an ID photo
               </p>

@@ -2,18 +2,28 @@
 
 import { useMemo, useState } from "react";
 import PostCard from "./PostCard";
+import ShowcaseComposer from "./ShowcaseComposer";
 import { showcaseFilters } from "@/lib/mock-data";
+import { useCreatePost } from "@/lib/useCreatePost";
+import {
+  displayName,
+  displayInitials,
+  authorMetaParts,
+  formatRelativeTime,
+} from "@/lib/postDisplay";
 
 const PAGE_SIZE = 6;
 
-export default function ShowcaseGrid({ items, initialQuery = "" }) {
+export default function ShowcaseGrid({ items, initialQuery = "", userId, authorProfile }) {
   const query = initialQuery.trim().toLowerCase();
 
+  const [posts, setPosts] = useState(items);
   const [active, setActive] = useState(showcaseFilters[0]);
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const { createPost, pending, error } = useCreatePost();
 
   const filtered = useMemo(() => {
-    return items.filter((post) => {
+    return posts.filter((post) => {
       const matchesCategory = active === "All" || post.category === active;
       const matchesQuery =
         !query ||
@@ -23,15 +33,51 @@ export default function ShowcaseGrid({ items, initialQuery = "" }) {
         post.tags.some((tag) => tag.toLowerCase().includes(query));
       return matchesCategory && matchesQuery;
     });
-  }, [items, active, query]);
+  }, [posts, active, query]);
 
   function selectFilter(filter) {
     setActive(filter);
     setVisible(PAGE_SIZE);
   }
 
+  async function handleCreate({ title, description, category }) {
+    if (!userId) return false;
+
+    const row = await createPost({
+      type: "showcase",
+      author_id: userId,
+      title,
+      excerpt: description,
+      category,
+    });
+
+    if (!row) return false;
+
+    setPosts((prev) => [
+      {
+        id: row.id,
+        authorInitials: displayInitials(authorProfile?.initials),
+        author: displayName(authorProfile?.name),
+        meta: authorMetaParts(authorProfile),
+        title: row.title,
+        excerpt: row.excerpt ?? "",
+        tags: row.tags ?? [],
+        category: row.category ?? "",
+        likes: 0,
+        liked: false,
+        comments: 0,
+        time: formatRelativeTime(row.created_at),
+      },
+      ...prev,
+    ]);
+    setVisible((v) => v + 1);
+    return true;
+  }
+
   return (
     <>
+      <ShowcaseComposer onSubmit={handleCreate} pending={pending} error={error} />
+
       {query && (
         <p className="-mt-2.5 mb-5 text-[13px] text-muted">
           Showing results for <span className="font-semibold text-heading">&quot;{query}&quot;</span>
@@ -62,7 +108,7 @@ export default function ShowcaseGrid({ items, initialQuery = "" }) {
       ) : (
         <div className="grid grid-cols-2 gap-5 max-[880px]:grid-cols-1">
           {filtered.slice(0, visible).map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} userId={userId} />
           ))}
         </div>
       )}

@@ -5,9 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
-import { SearchIcon, HomeIcon, GridIcon, ShowcaseIcon, MembersIcon, InfoIcon } from "./icons";
+import { SearchIcon, HomeIcon, GridIcon, ShowcaseIcon, MembersIcon, InfoIcon, LogOutIcon } from "./icons";
 import { navItems } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
+import { displayName, displayInitials } from "@/lib/postDisplay";
 
 const iconMap = {
   home: HomeIcon,
@@ -21,20 +22,46 @@ export default function Sidebar({ open, onNavigate }) {
   const pathname = usePathname();
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [session, setSession] = useState(null);
+  // undefined = not checked yet, null = confirmed signed out, object =
+  // signed in. Keeping "unknown" distinct from "signed out" avoids a flash
+  // of the generic Sign In button for someone who actually is signed in,
+  // while this client-only check is still in flight.
+  const [session, setSession] = useState(undefined);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     const supabase = createClient();
+    let active = true;
 
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    async function loadProfile(userId) {
+      if (!userId) {
+        if (active) setProfile(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("name, initials")
+        .eq("id", userId)
+        .single();
+      if (active) setProfile(data ?? null);
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      loadProfile(data.session?.user?.id);
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      loadProfile(newSession?.user?.id);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function handleSignOut() {
@@ -105,19 +132,29 @@ export default function Sidebar({ open, onNavigate }) {
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-3 border-t border-line pt-4">
+      <div className="mt-auto flex flex-col gap-2.5 border-t border-line pt-4">
         <ThemeToggle />
-        {session ? (
+        {session === undefined ? (
+          <div className="h-[54px] animate-pulse rounded-[10px] bg-paper-2" aria-hidden="true" />
+        ) : session ? (
           <>
-            <div className="truncate rounded-[10px] bg-paper-2 px-3.5 py-2.5 text-[12px] text-muted">
-              Signed in as{" "}
-              <span className="font-semibold text-heading">{session.user.email}</span>
+            <div className="flex items-center gap-2.5 rounded-[10px] bg-paper-2 px-3 py-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-moss text-[11px] font-bold text-white">
+                {displayInitials(profile?.initials)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[12.5px] font-semibold text-heading">
+                  {displayName(profile?.name)}
+                </div>
+                <div className="text-[10px] font-medium text-moss">Signed in</div>
+              </div>
             </div>
             <button
               type="button"
               onClick={handleSignOut}
-              className="block w-full rounded-full border border-heading bg-transparent px-5 py-2.5 text-center text-sm font-semibold text-heading transition-[transform,background] duration-150 hover:-translate-y-px hover:bg-moss hover:text-white"
+              className="flex w-full items-center justify-center gap-1.5 rounded-full border border-line py-2 text-[12px] font-semibold text-muted transition-colors duration-150 hover:border-stamp hover:text-stamp"
             >
+              <LogOutIcon size={13} />
               Sign out
             </button>
           </>
