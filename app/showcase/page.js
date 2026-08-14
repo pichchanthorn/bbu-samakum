@@ -16,10 +16,17 @@ export default async function ShowcasePage({ searchParams }) {
   const { data: userData } = await supabase.auth.getUser();
   const currentUserId = userData?.user?.id ?? null;
 
-  const { posts, error } = await getPostsWithEngagement({
-    type: "showcase",
-    currentUserId,
-  });
+  // Same columns lib/posts.js fetches for every other post's author, so a
+  // just-created card can be formatted with the exact same helpers instead
+  // of a second fallback style.
+  const [{ posts, error }, profileResult] = await Promise.all([
+    getPostsWithEngagement({ type: "showcase", currentUserId }),
+    currentUserId
+      ? supabase.from("profiles").select("name, initials, role, batch").eq("id", currentUserId).single()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const currentUserProfile = currentUserId ? profileResult.data ?? {} : null;
 
   return (
     <>
@@ -34,16 +41,17 @@ export default async function ShowcasePage({ searchParams }) {
             Couldn&apos;t load the showcase right now. Please try again in a
             moment.
           </div>
-        ) : posts.length === 0 ? (
+        ) : !currentUserId ? (
           <div className="rounded-card border border-dashed border-line bg-surface px-6 py-12 text-center text-sm text-muted">
-            {currentUserId ? (
-              "No showcase posts yet — be the first to share something."
-            ) : (
-              "Sign in with your university email to see the showcase."
-            )}
+            Sign in with your university email to see the showcase.
           </div>
         ) : (
-          <ShowcaseGrid items={posts} initialQuery={q} userId={currentUserId} />
+          <ShowcaseGrid
+            items={posts}
+            initialQuery={q}
+            userId={currentUserId}
+            authorProfile={currentUserProfile}
+          />
         )}
         <InfoPanel note="Sign in to share your own project or article with the department." ctaLabel="Sign in to share" />
       </Wrap>
