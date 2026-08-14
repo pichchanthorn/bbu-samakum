@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 
-// Fixed category set as specified — note this intentionally doesn't match
-// showcaseFilters in lib/mock-data.js ("Web Dev", "Data & AI", etc.), which
-// this phase leaves untouched. A post created with one of these categories
-// will only show under the "All" filter until that's reconciled.
+// Fixed category set. showcaseFilters in lib/mock-data.js matches these
+// exact values so filtering works for real posts.
 const CATEGORIES = ["Web", "Mobile", "Design", "Data", "Other"];
 const TITLE_MAX = 100;
 const DESCRIPTION_MAX = 1000;
