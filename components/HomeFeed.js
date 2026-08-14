@@ -66,31 +66,33 @@ export default function HomeFeed({ initialPosts, userId, authorProfile }) {
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <div className="mb-5 flex flex-col gap-2 rounded-card border border-line bg-surface px-4 py-3.5">
-        <div className="flex items-start gap-3">
-          <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-moss text-xs font-bold text-white">
-            {displayInitials(authorProfile?.initials)}
+      <div className="flex flex-col gap-2.5 rounded-card border border-line bg-surface p-5">
+        <div className="flex items-start gap-3 max-[560px]:flex-col">
+          <div className="flex items-start gap-3 min-[561px]:flex-1">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-moss text-xs font-bold text-white">
+              {displayInitials(authorProfile?.initials)}
+            </div>
+            <textarea
+              rows={1}
+              maxLength={MAX_LENGTH}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Share something with the IT Department..."
+              aria-label="Share something with the IT Department"
+              className="max-h-40 min-h-[42px] flex-1 resize-y rounded-[18px] border border-line bg-paper px-4 py-2.5 text-[13.5px] text-charcoal outline-none placeholder:text-faint focus:border-moss"
+            />
           </div>
-          <textarea
-            rows={1}
-            maxLength={MAX_LENGTH}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Share something with the IT Department..."
-            aria-label="Share something with the IT Department"
-            className="max-h-40 min-h-[42px] flex-1 resize-y rounded-[18px] border border-line bg-paper px-4 py-2.5 text-[13.5px] text-charcoal outline-none placeholder:text-faint focus:border-moss"
-          />
           <button
             type="button"
             onClick={handlePost}
             disabled={!canSubmit}
-            className="shrink-0 rounded-full border border-ink bg-ink px-[18px] py-2.5 text-center text-[13px] font-semibold text-white transition-[transform,background,opacity] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:hover:bg-ink"
+            className="shrink-0 rounded-full border border-ink bg-ink px-[18px] py-2.5 text-center text-[13px] font-semibold text-white transition-[transform,background,opacity] duration-150 hover:-translate-y-px hover:bg-moss disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:hover:bg-ink max-[560px]:w-full"
           >
             {pending ? "Posting..." : "Post"}
           </button>
         </div>
-        <div className="flex items-center justify-between pl-[46px] text-[11px]">
+        <div className="flex items-center justify-between pl-[46px] text-[11px] max-[560px]:pl-0">
           {error ? (
             <span role="status" className="text-stamp">
               {error}

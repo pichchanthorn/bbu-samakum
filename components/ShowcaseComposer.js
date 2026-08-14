@@ -51,10 +51,10 @@ export default function ShowcaseComposer({ onSubmit, pending, error }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-7 flex flex-col gap-3.5 rounded-card border border-line bg-surface p-[22px]"
+      className="mb-7 flex flex-col gap-3.5 rounded-card border border-line bg-surface p-5"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-bold text-heading">New Showcase Post</h3>
+        <h3 className="text-[16px] font-bold tracking-[-0.005em] text-heading">New Showcase Post</h3>
         <button
           type="button"
           onClick={() => setOpen(false)}
