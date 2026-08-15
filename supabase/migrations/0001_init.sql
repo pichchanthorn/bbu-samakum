@@ -36,9 +36,16 @@ begin
   end if;
 
   if new.initials is null or length(trim(new.initials)) = 0 then
+    -- `substring(text from pattern for escape)` is the SQL-standard
+    -- regex-with-escape-char form, and `for 1` gets resolved against the
+    -- *positional* substring(text, int, int) overload instead — throwing
+    -- "invalid input syntax for type integer" the moment this actually
+    -- runs, since '^\S+' isn't a valid integer. Using a capture group with
+    -- the plain 2-argument `from pattern` form sidesteps the ambiguity
+    -- entirely and returns just the captured character.
     new.initials := upper(
-      coalesce(substring(new.name from '^\S+' for 1), '') ||
-      coalesce(substring(new.name from '\s(\S)' for 1), '')
+      coalesce(substring(new.name from '^(\S)'), '') ||
+      coalesce(substring(new.name from '\s(\S)'), '')
     );
   end if;
   return new;
